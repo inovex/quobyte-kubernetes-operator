@@ -1,0 +1,68 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: client
+spec:
+  template:
+    metadata:
+      labels:
+        role: client
+        version: VERSION
+    spec:
+      containers:
+      - name: quobyte-client
+        image: quay.io/quobyte/quobyte-client:VERSION
+        command:
+          - /bin/sh
+          - -xec
+          - |
+            ADDR=$(echo $(nslookup ${QUOBYTE_REGISTRY} | grep -A10 -m1 -e 'Name:' | grep Address | awk '{split($0,a,":"); print a[2]}'  | awk '{print $1":7866"}') | tr ' ' ,)
+            if cut -d" " -f2 /etc/mtab | grep -q ${QUOBYTE_MOUNT_POINT}; then
+              # test this case
+              OPTS="-o remount"
+            else
+              mkdir -p ${QUOBYTE_MOUNT_POINT}
+            fi
+            /bin/nsenter -t 1 --wd=. -m -- \
+              lib/ld-linux-x86-64.so.2 \
+              --library-path ./lib \
+            ./bin/mount.quobyte --hostname ${NODENAME} --allow-usermapping-in-volumename -f -d ${QUOBYTE_CLIENT_LOG_LEVEL} ${OPTS} ${ADDR}/ ${QUOBYTE_MOUNT_POINT}
+        securityContext:
+          privileged: true
+        env:
+          - name: QUOBYTE_CLIENT_HTTP_PORT
+            value: "55000"
+          - name: QUOBYTE_CLIENT_LOG_LEVEL
+            value: INFO
+          - name: QUOBYTE_REGISTRY
+            value: registry
+          - name: QUOBYTE_MOUNT_POINT
+            value: /var/lib/kubelet/plugins/kubernetes.io~quobyte
+          - name: NODENAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+        ports:
+          - name: http-port
+            containerPort: 55000
+            hostPort: 55000
+            protocol: TCP
+        volumeMounts:
+          - name: k8s-plugin-dir
+            mountPath: /var/lib/kubelet/plugins
+          - name: rootfs
+            mountPath: /rootfs
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/bash", "-xc", "umount -f ${QUOBYTE_MOUNT_POINT}"]
+      hostPID: true
+      nodeSelector:
+        quobyte_client: "true"
+      volumes:
+      - name: k8s-plugin-dir
+        hostPath:
+          path: /var/lib/kubelet/plugins
+      - name: rootfs
+        hostPath:
+          path: /

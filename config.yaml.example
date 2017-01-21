@@ -1,0 +1,19 @@
+namespace: quobyte
+registry:
+    - node: host1 
+      bootstrap: true
+    - node: host2
+    - node: host3
+metadata:
+    - node: host1
+    - node: host2
+    - node: host3
+data: 
+    # use all available nodes
+    - node: all
+client:
+    # use all available nodes
+    - node: all
+version: '1.3.12'
+kubernetes_files:
+    path: './quobyte'

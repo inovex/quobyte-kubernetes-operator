@@ -1,0 +1,99 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: webconsole
+spec:
+  template:
+    metadata:
+      labels:
+        role: webconsole
+        version: VERSION
+    spec:
+      containers:
+      - name: quobyte-webconsole
+        image: quay.io/quobyte/quobyte-server:VERSION
+        env:
+          - name: QUOBYTE_SERVICE
+            value: "webconsole"
+          - name: QUOBYTE_WEBCONSOLE_PORT
+            value: "8080"
+          - name: QUOBYTE_REGISTRY
+            value: registry:7866
+          - name: QUOBYTE_API
+            value: api:7860
+          - name: MAX_MEM
+            valueFrom:
+              configMapKeyRef:
+                name: quobyte-config
+                key: webconsole.max_mem
+          - name: MIN_MEM
+            valueFrom:
+              configMapKeyRef:
+                name: quobyte-config
+                key: webconsole.min_mem
+        command:
+          - /bin/bash
+          - -xec
+          - |
+            sed "s/MIN_MEM_WEBCONSOLE=.*/MIN_MEM_WEBCONSOLE=${MIN_MEM}/" -i /etc/default/quobyte
+            sed "s/MAX_MEM_WEBCONSOLE=.*/MAX_MEM_WEBCONSOLE=${MAX_MEM}/" -i /etc/default/quobyte
+            exec /bin/bash -x /opt/main.sh
+        ports:
+          - name: http
+            containerPort: 8080
+            protocol: TCP
+        resources:
+          limits:
+            memory: "300Mi"
+            cpu: "100m"
+      - name: quobyte-api
+        image: quay.io/quobyte/quobyte-server:VERSION
+        env:
+          - name: QUOBYTE_SERVICE
+            value: api
+          - name: QUOBYTE_API_PORT
+            value: "7860"
+          - name: QUOBYTE_REGISTRY
+            value: registry:7866
+          - name: QUOBYTE_LOG_LEVEL
+            value: DEBUG
+          - name: MAX_MEM
+            valueFrom:
+              configMapKeyRef:
+                name: quobyte-config
+                key: api.max_mem
+          - name: MIN_MEM
+            valueFrom:
+              configMapKeyRef:
+                name: quobyte-config
+                key: api.min_mem
+        ports:
+          - name: api
+            containerPort: 7860
+            protocol: TCP
+        command:
+          - /bin/bash
+          - -xec
+          - |
+            sed "s/.*MIN_MEM_API=.*/MIN_MEM_API=${MIN_MEM}/" -i /etc/default/quobyte
+            sed "s/.*MAX_MEM_API=.*/MAX_MEM_API=${MAX_MEM}/" -i /etc/default/quobyte
+            exec /bin/bash -x /opt/main.sh
+        resources:
+          limits:
+            memory: "300Mi"
+            cpu: "100m"
+        volumeMounts:
+            - name: devices
+              mountPath: /devices
+        readinessProbe:
+            timeoutSeconds: 5
+            tcpSocket:
+              port: 7860
+        livenessProbe:
+            initialDelaySeconds: 30
+            timeoutSeconds: 10
+            tcpSocket:
+              port: 7860
+      volumes:
+      - name: devices
+        emptyDir:

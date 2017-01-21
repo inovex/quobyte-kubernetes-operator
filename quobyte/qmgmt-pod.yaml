@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    role: qmgmt-pod
+    version: VERSION
+  name: qmgmt-pod
+spec:
+  containers:
+    - name: qmgmt-pod
+      image: quay.io/quobyte/quobyte-server:VERSION
+      command:
+        - /bin/bash
+        - -xec
+        - |
+          tail -f /dev/null
