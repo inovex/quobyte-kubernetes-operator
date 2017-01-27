@@ -8,6 +8,10 @@ spec:
       labels:
         role: registry
         version: VERSION
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: '/prometheus'
+        prometheus.io/port: '7876'
     spec:
       containers:
         - name: quobyte-registry
