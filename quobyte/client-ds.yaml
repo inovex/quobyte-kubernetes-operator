@@ -18,7 +18,11 @@ spec:
           - |
             ADDR=$(echo $(nslookup ${QUOBYTE_REGISTRY} | grep -A10 -m1 -e 'Name:' | grep Address | awk '{split($0,a,":"); print a[2]}'  | awk '{print $1":7866"}') | tr ' ' ,)
             if [[ ! -f /rootfs/etc/fuse.conf ]]; then
-                cp /etc/fuse.conf /rootfs/etc/fuse.conf
+              echo "Copy fuse config to host"
+              { echo -e '# Copied from Quobyte Client Container\n'; cat /etc/fuse.conf; } > /rootfs/etc/fuse.conf
+            fi
+            if [[ $(grep "^[^#]" /rootfs/etc/fuse.conf  | grep -c "user_allow_other" /rootfs/etc/fuse.conf) -eq 0 ]]; then
+              echo "user_allow_other" >> /rootfs/etc/fuse.conf
             fi
             if cut -d" " -f2 /etc/mtab | grep -q ${QUOBYTE_MOUNT_POINT}; then
               # test this case
