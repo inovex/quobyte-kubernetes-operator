@@ -180,11 +180,11 @@ def deploy_registries(namespace, registries):
                                                         label_selector='role=registry')
         if len(api_response.items) > 0 and api_response.items[0].status.phase == 'Running':
             success = True
+        else:
+            label_node(bootstrap_node, 'quobyte_registry', 'true')
     except ApiException as e:
         print("Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e)
     except ValueError:
-        # There is no Bootstrap node
-        label_node(bootstrap_node, 'quobyte_registry', 'true')
         pass
 
     if api_response is None or len(api_response.items) < 1 or (api_response.items[0].status.phase != 'Running'):
@@ -214,9 +214,9 @@ def wait_for_running_pod(api_instance, namespace, label_selector, name):
             pass
 
         if api_response is not None and \
-           api_response.items is not None and \
-           len(api_response.items) > 0 and \
-           api_response.items[0].status.container_statuses is not None:
+                        api_response.items is not None and \
+                        len(api_response.items) > 0 and \
+                        api_response.items[0].status.container_statuses is not None:
             count_ready_container = len([cs for cs in api_response.items[0].status.container_statuses if cs.ready])
             count_spec_container = len(api_response.items[0].spec.containers)
             if api_response.items[0].status.phase == 'Running' and count_ready_container == count_spec_container:
