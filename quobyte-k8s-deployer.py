@@ -29,7 +29,8 @@ def create_namespace(namespace):
     except ValueError:
         pass
 
-    if api_response is not None:
+    if api_response is not None and len(api_response.items) > 0:
+        print('Namespace {} already exists'.format(namespace))
         return
 
     print('Create Namespace: {}'.format(namespace))
@@ -56,7 +57,8 @@ def create_configmap(namespace, config_path):
     except ValueError:
         pass
 
-    if api_response is not None:
+    if api_response is not None and len(api_response.items) > 0:
+        print("ConfigMap already exists")
         return
 
     print('Create Quobyte Config Map')
@@ -76,7 +78,8 @@ def create_svc(namespace, config_path, name):
     except ValueError:
         pass
 
-    if api_response is not None:
+    if api_response is not None and len(api_response.items) > 0:
+        print("Quobyte Service {} already exist".format(name))
         return
 
     print('Create Quobyte Service {}'.format(name))
@@ -113,7 +116,8 @@ def create_daemonset(namespace, config_path, name, version):
     except ValueError:
         pass
 
-    if api_response is not None:
+    if api_response is not None and len(api_response.items) > 0:
+        print('Dameonset {} already exists'.format(name))
         return
 
     print('Create Quobyte DaemonSet {}'.format(name))
@@ -136,7 +140,8 @@ def label_node(node, key, value):
     except ValueError:
         pass
 
-    if api_response is not None:
+    if api_response is not None and len(api_response.items) > 0:
+        print('Node: {} already labeled with {}={}'.format(node, key, value))
         return
 
     print('Label Node: {} with label {}={}'.format(node, key, value))
@@ -182,7 +187,7 @@ def deploy_registries(namespace, registries):
         label_node(bootstrap_node, 'quobyte_registry', 'true')
         pass
 
-    if (api_response is None) or len(api_response.items) < 1 or (api_response.items[0].status.phase != 'Running'):
+    if api_response is None or len(api_response.items) < 1 or (api_response.items[0].status.phase != 'Running'):
         success = wait_for_running_pod(api_instance, namespace, 'role=registry', 'Bootstrap registry')
 
     if not success:
@@ -237,7 +242,8 @@ def deploy_api_webconsole(namespace, config_path, version):
     except ValueError:
         pass
 
-    if api_response is not None:
+    if api_response is not None and len(api_response.items) > 0:
+        print('Quobyte Webconsole and API already exist')
         return
 
     body = load_body('{}/webconsole-deployment.yaml'.format(config_path))
@@ -312,7 +318,8 @@ def deploy_qmgmt_pod(namespace, config_path, version):
     except ValueError:
         pass
 
-    if api_response is not None:
+    if api_response is not None and len(api_response.items) > 0:
+        print('qmgmt Pod already exist')
         return
     body = load_body('{}/qmgmt-pod.yaml'.format(config_path))
     set_version_in_spec(body, version)
