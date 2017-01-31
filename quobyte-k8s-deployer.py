@@ -145,12 +145,8 @@ def label_node(node, key, value):
         return
 
     print('Label Node: {} with label {}={}'.format(node, key, value))
-    body = [{"op": "add",
-             "path": "/metadata/labels/{}".format(key),
-             "value": value}]
-
     try:
-        api_instance.patch_node(node, body)
+        api_instance.patch_node(node, {"metadata": {"labels": {key: value}}})
     except ApiException as e:
         print("Exception when calling CoreV1Api->patch_node: %s\n" % e)
 
