@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-from __future__ import print_function
-
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 import yaml
@@ -105,7 +103,15 @@ def set_version_in_spec(spec, version):
             c['image'] = c['image'].replace('VERSION', version)
 
 
-def create_daemonset(namespace, config_path, name, version):
+def set_mount_opts_in_spec(spec, opts):
+    for c in spec['spec']['template']['spec']['containers']:
+        for e in c['env']:
+            if e['name'] != 'OPTS':
+                continue
+            e['value'] = e['value'].replace('MOUNT_OPTS', opts)
+
+
+def create_daemonset(namespace, config_path, name, version, mount_opts=''):
     api_instance = client.ExtensionsV1beta1Api()
     api_response = None
     try:
@@ -123,6 +129,8 @@ def create_daemonset(namespace, config_path, name, version):
     print('Create Quobyte DaemonSet {}'.format(name))
     body = load_body('{}/{}-ds.yaml'.format(config_path, name))
     set_version_in_spec(body, version)
+    if mount_opts != '':
+        set_mount_opts_in_spec(body, mount_opts)
     try:
         api_instance.create_namespaced_daemon_set(namespace, body)
     except ApiException as e:
@@ -282,9 +290,10 @@ def deploy_data(namespace, config_path, nodes, version):
         label_node(node['node'], 'quobyte_metadata', 'true')
 
 
-def deploy_client(namespace, config_path, nodes, version):
+def deploy_client(namespace, config_path, nodes, version, mount_opts):
     print('Start Quobyte Client deployment')
-    create_daemonset(namespace, config_path, 'client', version)
+    # mount_opts
+    create_daemonset(namespace, config_path, 'client', version, mount_opts)
 
     if nodes[0]['node'] == 'all':
         api_instance = client.CoreV1Api()
@@ -358,7 +367,7 @@ def main():
     deploy_api_webconsole(namespace, config_path, version)
     deploy_metadata(namespace, config_path, quobyte_config.get('metadata', []), version)
     deploy_data(namespace, config_path, quobyte_config.get('data', []), version)
-    deploy_client(namespace, config_path, quobyte_config.get('client', []), version)
+    deploy_client(namespace, config_path, quobyte_config.get('client', []), version, quobyte_config['mount_opts'])
     deploy_qmgmt_pod(namespace, config_path, version)
 
     print('Quobyte Cluster was successfully deployed')
