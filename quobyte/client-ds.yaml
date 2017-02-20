@@ -29,7 +29,7 @@ spec:
               echo "user_allow_other" >> /rootfs/etc/fuse.conf
             fi
             if cut -d" " -f2 /etc/mtab | grep -q ${QUOBYTE_MOUNT_POINT}; then
-              if [-z $OPTS]; then
+              if [[ -z $OPTS ]]; then
                  OPTS="-o remount"
               else
                 OPTS="$OPTS,remount"
@@ -54,8 +54,6 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
-          - name: OPTS
-            value: MOUNT_OPTS
         ports:
           - name: http-port
             containerPort: 55000

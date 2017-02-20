@@ -104,12 +104,10 @@ def set_version_in_spec(spec, version):
 
 
 def set_mount_opts_in_spec(spec, opts):
+    if opts == '':
+        return
     for c in spec['spec']['template']['spec']['containers']:
-        for e in c['env']:
-            if e['name'] != 'OPTS':
-                continue
-            e['value'] = e['value'].replace('MOUNT_OPTS', opts)
-
+        c['env'].append({'name': 'OPTS', 'value': opts})
 
 def create_daemonset(namespace, config_path, name, version, mount_opts=''):
     api_instance = client.ExtensionsV1beta1Api()
