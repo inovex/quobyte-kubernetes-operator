@@ -5,6 +5,10 @@ metadata:
 spec:
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: '/prometheus'
+        prometheus.io/port: '55000'
       labels:
         role: client
         version: VERSION
@@ -16,7 +20,7 @@ spec:
           - /bin/sh
           - -xec
           - |
-            ADDR=$(echo $(nslookup ${QUOBYTE_REGISTRY} | grep -A10 -m1 -e 'Name:' | grep Address | awk '{split($0,a,":"); print a[2]}'  | awk '{print $1":7866"}') | tr ' ' ,)
+            ADDR=$(echo $(nslookup ${QUOBYTE_REGISTRY} | grep -A10 -m1 -e 'Name:' | grep Address | awk '{split($0,a,":"); print a[2]}'  | awk '{print $1":7861"}') | tr ' ' ,)
             if [[ ! -f /rootfs/etc/fuse.conf ]]; then
               echo "Copy fuse config to host"
               { echo -e '# Copied from Quobyte Client Container\n'; cat /etc/fuse.conf; } > /rootfs/etc/fuse.conf
@@ -40,8 +44,6 @@ spec:
         securityContext:
           privileged: true
         env:
-          - name: QUOBYTE_CLIENT_HTTP_PORT
-            value: "55000"
           - name: QUOBYTE_CLIENT_LOG_LEVEL
             value: INFO
           - name: QUOBYTE_REGISTRY
@@ -59,6 +61,17 @@ spec:
             containerPort: 55000
             hostPort: 55000
             protocol: TCP
+        readinessProbe:
+          timeoutSeconds: 5
+          httpGet:
+            port: 55000
+            path: /
+        livenessProbe:
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+          httpGet:
+            port: 55000
+            path: /
         volumeMounts:
           - name: k8s-plugin-dir
             mountPath: /var/lib/kubelet/plugins

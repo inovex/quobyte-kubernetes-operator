@@ -8,10 +8,6 @@ spec:
       labels:
         role: registry
         version: VERSION
-      annotations:
-        prometheus.io/scrape: 'true'
-        prometheus.io/path: '/prometheus'
-        prometheus.io/port: '7876'
     spec:
       containers:
         - name: quobyte-registry
@@ -21,12 +17,8 @@ spec:
           env:
             - name: QUOBYTE_SERVICE
               value: registry
-            - name: QUOBYTE_RPC_PORT
-              value: "7866"
-            - name: QUOBYTE_HTTP_PORT
-              value: "7876"
             - name: QUOBYTE_REGISTRY
-              value: registry
+              value: _quobyte._tcp.registry
             - name: NODENAME
               valueFrom:
                 fieldRef:
@@ -46,13 +38,13 @@ spec:
                   key: registry.min_mem
           ports:
             - name: rpc-tcp
-              containerPort: 7866
+              containerPort: 7861
               protocol: TCP
             - name: rpc-udp
-              containerPort: 7866
+              containerPort: 7861
               protocol: UDP
             - name: http
-              containerPort: 7876
+              containerPort: 7871
               protocol: TCP
           volumeMounts:
             - name: devices
@@ -76,6 +68,12 @@ spec:
                 fi
               fi
 
+              if [ ! -f /devices/dev1/UUID ]; then
+                echo uuid=$(uuidgen) >> /devices/dev1/UUID
+              fi
+
+              cat /devices/dev1/UUID >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
+
               exec /bin/bash -x /opt/main.sh
           resources:
             limits:
@@ -88,13 +86,13 @@ spec:
           readinessProbe:
             timeoutSeconds: 5
             httpGet:
-              port: 7876
+              port: 7871
               path: /
           livenessProbe:
             initialDelaySeconds: 30
             timeoutSeconds: 5
             httpGet:
-              port: 7876
+              port: 7871
               path: /
       nodeSelector:
         quobyte_registry: "true"

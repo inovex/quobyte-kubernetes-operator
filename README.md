@@ -7,7 +7,6 @@ This is a Python script that deploys [Quobyte](https://www.quobyte.com) on top o
 - [Kubernetes API Client](https://github.com/kubernetes-incubator/client-python)
 - Running Kubernetes Cluster
 
-
 ## Usage
 
 ### Configuration

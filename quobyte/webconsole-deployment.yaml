@@ -18,9 +18,9 @@ spec:
           - name: QUOBYTE_WEBCONSOLE_PORT
             value: "8080"
           - name: QUOBYTE_REGISTRY
-            value: registry:7866
+            value: _quobyte._tcp.registry
           - name: QUOBYTE_API
-            value: api:7860
+            value: api
           - name: MAX_MEM
             valueFrom:
               configMapKeyRef:
@@ -54,7 +54,7 @@ spec:
           - name: QUOBYTE_API_PORT
             value: "7860"
           - name: QUOBYTE_REGISTRY
-            value: registry:7866
+            value: _quobyte._tcp.registry
           - name: QUOBYTE_LOG_LEVEL
             value: DEBUG
           - name: MAX_MEM
@@ -82,9 +82,6 @@ spec:
           limits:
             memory: "300Mi"
             cpu: "100m"
-        volumeMounts:
-            - name: devices
-              mountPath: /devices
         readinessProbe:
             timeoutSeconds: 5
             tcpSocket:
@@ -94,6 +91,3 @@ spec:
             timeoutSeconds: 10
             tcpSocket:
               port: 7860
-      volumes:
-      - name: devices
-        emptyDir:

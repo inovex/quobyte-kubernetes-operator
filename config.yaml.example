@@ -1,6 +1,6 @@
 namespace: quobyte
 registry:
-    - node: host1 
+    - node: host1
       bootstrap: true
     - node: host2
     - node: host3
@@ -8,7 +8,7 @@ metadata:
     - node: host1
     - node: host2
     - node: host3
-data: 
+data:
     # use all available nodes
     - node: all
 client:
@@ -18,4 +18,4 @@ version: '1.3.13'
 kubernetes_files:
     path: './quobyte'
 # example: '-o user_xattr'
-mount_opts: ''    
+mount_opts: ''

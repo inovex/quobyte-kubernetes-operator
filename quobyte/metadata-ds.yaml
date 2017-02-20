@@ -5,6 +5,10 @@ metadata:
 spec:
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: '/prometheus'
+        prometheus.io/port: '7872'
       labels:
         role: metadata
         version: VERSION
@@ -18,7 +22,7 @@ spec:
           - name: QUOBYTE_SERVICE
             value: metadata
           - name: QUOBYTE_REGISTRY
-            value: registry
+            value: _quobyte._tcp.registry
           - name: NODENAME
             valueFrom:
               fieldRef:
@@ -48,10 +52,32 @@ spec:
             device.type=METADATA_DEVICE
             EOF
             fi
+
+            if [ ! -f /devices/metadata/UUID ]; then
+              echo uuid=$(uuidgen) >> /devices/metadata/UUID
+            fi
+
+            cat /devices/metadata/UUID >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
+
             exec /bin/bash -x /opt/main.sh
         volumeMounts:
           - name: devices
             mountPath: /devices/metadata
+        ports:
+          - name: rpc-tcp
+            containerPort: 7872
+            protocol: TCP
+        readinessProbe:
+          timeoutSeconds: 5
+          httpGet:
+            port: 7872
+            path: /
+        livenessProbe:
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+          httpGet:
+            port: 7872
+            path: /
         resources:
           limits:
             memory: "512Mi"
