@@ -1,6 +1,12 @@
 # Quobyte Kubernetes Deployer
 
-This is a Python script that deploys [Quobyte](https://www.quobyte.com) on top of Kubernetes.
+This is a Python script that deploys [Quobyte](https://www.quobyte.com) on top of Kubernetes. The script deploys the following Quobyte services:
+
+- `Registry`
+- `Metadata`
+- `Data`
+- `Client`
+- `API` (and the Web Console)
 
 ## Prequesits
 
@@ -17,26 +23,42 @@ Copy the configuration file config.yaml.example to config.yaml
 cp config.yaml.example config.yaml
 ```
 
-Example Configfile:
+Example Configuration file (if no configuration is specified for an Quobyte service the default values will be used):
 
 ```yaml
 namespace: quobyte
+version: '1.3.14'
+kubernetes_files: './quobyte'
 registry:
-    - node: 138.68.100.83
-      bootstrap: true
-    - node: 138.68.104.117
-    - node: 138.68.104.130
+    nodes:
+        - 207.154.211.166
+        - 207.154.211.247
+        - 207.154.215.157
 metadata:
-    - node: 138.68.100.83
-    - node: 138.68.104.117
-    - node: 138.68.104.130
-data:
-    - node: all
+    nodes:
+        - 207.154.211.166
+        - 207.154.211.247
+        - 207.154.215.157
 client:
-    - node: all
-version: '1.3.12'
-kubernetes_files:
-    path: './quobyte'
+    mount_opts: '' # example: '-o user_xattr'
+api:
+    resources:
+        limits:
+            memory: 1Gi
+            cpu: 500m
+        requests:
+            memory: 500Mi
+            cpu: 250m
+default:
+    nodes:
+        - all
+    resources:
+        limits:
+            memory: 2Gi
+            cpu: 1
+        requests:
+            memory: 1Gi
+            cpu: 500m
 ```
 
 ### Deployment
