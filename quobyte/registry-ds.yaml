@@ -26,16 +26,6 @@ spec:
             - name: QUOBYTE_EXTRA_SERVICE_CONFIG
               value: >
                 constants.automation.manage_registry_replicas=true
-            - name: MAX_MEM
-              valueFrom:
-                configMapKeyRef:
-                  name: quobyte-config
-                  key: registry.max_mem
-            - name: MIN_MEM
-              valueFrom:
-                configMapKeyRef:
-                  name: quobyte-config
-                  key: registry.min_mem
           ports:
             - name: rpc-tcp
               containerPort: 7861
@@ -75,10 +65,6 @@ spec:
               cat /devices/dev1/UUID >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
 
               exec /bin/bash -x /opt/main.sh
-          resources:
-            limits:
-              memory: "512Mi"
-              cpu: "100m"
           lifecycle:
             preStop:
               exec:

@@ -27,16 +27,6 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
-          - name: MAX_MEM
-            valueFrom:
-              configMapKeyRef:
-                name: quobyte-config
-                key: data.max_mem
-          - name: MIN_MEM
-            valueFrom:
-              configMapKeyRef:
-                name: quobyte-config
-                key: data.min_mem
         command:
           - /bin/bash
           - -xec
@@ -78,10 +68,6 @@ spec:
           httpGet:
             port: 7873
             path: /
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "200m"
       nodeSelector:
         quobyte_data: "true"
       volumes:

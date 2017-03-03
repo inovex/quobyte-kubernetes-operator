@@ -21,16 +21,6 @@ spec:
             value: _quobyte._tcp.registry
           - name: QUOBYTE_API
             value: api
-          - name: MAX_MEM
-            valueFrom:
-              configMapKeyRef:
-                name: quobyte-config
-                key: webconsole.max_mem
-          - name: MIN_MEM
-            valueFrom:
-              configMapKeyRef:
-                name: quobyte-config
-                key: webconsole.min_mem
         command:
           - /bin/bash
           - -xec
@@ -42,10 +32,6 @@ spec:
           - name: http
             containerPort: 8080
             protocol: TCP
-        resources:
-          limits:
-            memory: "300Mi"
-            cpu: "100m"
       - name: quobyte-api
         image: quay.io/quobyte/quobyte-server:VERSION
         env:
@@ -57,16 +43,6 @@ spec:
             value: _quobyte._tcp.registry
           - name: QUOBYTE_LOG_LEVEL
             value: DEBUG
-          - name: MAX_MEM
-            valueFrom:
-              configMapKeyRef:
-                name: quobyte-config
-                key: api.max_mem
-          - name: MIN_MEM
-            valueFrom:
-              configMapKeyRef:
-                name: quobyte-config
-                key: api.min_mem
         ports:
           - name: api
             containerPort: 7860
@@ -78,10 +54,6 @@ spec:
             sed "s/.*MIN_MEM_API=.*/MIN_MEM_API=${MIN_MEM}/" -i /etc/default/quobyte
             sed "s/.*MAX_MEM_API=.*/MAX_MEM_API=${MAX_MEM}/" -i /etc/default/quobyte
             exec /bin/bash -x /opt/main.sh
-        resources:
-          limits:
-            memory: "300Mi"
-            cpu: "100m"
         readinessProbe:
             timeoutSeconds: 5
             tcpSocket:

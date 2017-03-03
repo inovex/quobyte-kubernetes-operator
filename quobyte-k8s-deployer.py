@@ -7,6 +7,7 @@ import time
 import argparse
 
 
+# TODO move into class (simpler method calls)
 def load_body(body_file):
     with open(body_file, 'r', encoding='utf-8') as content:
         body = yaml.safe_load(content)
@@ -43,27 +44,6 @@ def create_namespace(namespace):
         api_instance.create_namespace(body)
     except ApiException as e:
         print("Exception when calling CoreV1Api->create_namespace: %s\n" % e)
-
-
-def create_configmap(namespace, config_path):
-    api_instance = client.CoreV1Api()
-    api_response = None
-    try:
-        api_response = api_instance.list_namespaced_config_map(namespace, field_selector='metadata.name=quobyte-config')
-    except ApiException as e:
-        print("Exception when calling CoreV1Api->list_namespaced_config_map: %s\n" % e)
-    except ValueError:
-        pass
-
-    if api_response is not None and len(api_response.items) > 0:
-        print("ConfigMap already exists")
-        return
-
-    print('Create Quobyte Config Map')
-    try:
-        api_instance.create_namespaced_config_map(namespace, load_body(config_path + '/config.yaml'))
-    except ApiException as e:
-        print("Exception when calling CoreV1Api->create_namespaced_configmap: %s\n" % e)
 
 
 def create_svc(namespace, config_path, name):
@@ -109,10 +89,24 @@ def set_mount_opts_in_spec(spec, opts):
     for c in spec['spec']['template']['spec']['containers']:
         c['env'].append({'name': 'OPTS', 'value': opts})
 
-def create_daemonset(namespace, config_path, name, version, mount_opts=''):
+
+def set_resources_in_spec(spec, resources):
+    if resources == '':
+        return
+    for c in spec['spec']['template']['spec']['containers']:
+        c['resources'] = resources
+        if 'command' in c:
+            command = c['command'][len(c['command']) - 1]
+            command = command.replace('${MIN_MEM}', resources['requests']['memory'].rstrip('i').lower())
+            command = command.replace('${MAX_MEM}', resources['limits']['memory'].rstrip('i').lower())
+            c['command'][len(c['command']) - 1] = command
+
+
+def create_daemonset(namespace, config_path, name, version, resources, mount_opts=''):
     api_instance = client.ExtensionsV1beta1Api()
     api_response = None
     try:
+        # TODO we could here check if specification is consistent (updates)
         api_response = api_instance.list_namespaced_daemon_set(namespace,
                                                                field_selector='metadata.name={}'.format(name))
     except ApiException as e:
@@ -127,6 +121,7 @@ def create_daemonset(namespace, config_path, name, version, mount_opts=''):
     print('Create Quobyte DaemonSet {}'.format(name))
     body = load_body('{}/{}-ds.yaml'.format(config_path, name))
     set_version_in_spec(body, version)
+    set_resources_in_spec(body, resources)
     if mount_opts != '':
         set_mount_opts_in_spec(body, mount_opts)
     try:
@@ -163,8 +158,9 @@ def load_config(path):
     return config_map
 
 
-def deploy_registries(namespace, registries):
+def deploy_registries(namespace, config_path, registries, version, resources):
     print('Start Quobyte Registry deployment')
+    create_daemonset(namespace, config_path, 'registry', version, resources)
     api_instance = client.CoreV1Api()
     # TODO could fail as long we don't validate the config
     bootstrap_nodes = [reg for reg in registries if 'bootstrap' in reg]
@@ -260,17 +256,17 @@ def deploy_api_webconsole(namespace, config_path, version):
         raise TimeoutError('API and Webconsole deployment didn\'t come up')
 
 
-def deploy_metadata(namespace, config_path, nodes, version):
+def deploy_metadata(namespace, config_path, nodes, version, resources):
     print('Start Quobyte Metadata deployment')
-    create_daemonset(namespace, config_path, 'metadata', version)
+    create_daemonset(namespace, config_path, 'metadata', version, resources)
 
     for node in nodes:
         label_node(node['node'], 'quobyte_metadata', 'true')
 
 
-def deploy_data(namespace, config_path, nodes, version):
+def deploy_data(namespace, config_path, nodes, version, resources):
     print('Start Quobyte Data deployment')
-    create_daemonset(namespace, config_path, 'data', version)
+    create_daemonset(namespace, config_path, 'data', version, resources)
 
     if nodes[0]['node'] == 'all':
         api_instance = client.CoreV1Api()
@@ -288,10 +284,9 @@ def deploy_data(namespace, config_path, nodes, version):
         label_node(node['node'], 'quobyte_metadata', 'true')
 
 
-def deploy_client(namespace, config_path, nodes, version, mount_opts):
+def deploy_client(namespace, config_path, nodes, version, resources, mount_opts):
     print('Start Quobyte Client deployment')
-    # mount_opts
-    create_daemonset(namespace, config_path, 'client', version, mount_opts)
+    create_daemonset(namespace, config_path, 'client', version, resources, mount_opts)
 
     if nodes[0]['node'] == 'all':
         api_instance = client.CoreV1Api()
@@ -356,17 +351,47 @@ def main():
     namespace = quobyte_config['namespace']
 
     create_namespace(namespace)
-    create_configmap(namespace, config_path)
     for svc in ['registry', 'webconsole', 'api']:
         create_svc(namespace, config_path, svc)
 
-    create_daemonset(namespace, config_path, 'registry', version)
-    deploy_registries(namespace, quobyte_config.get('registry', []))
-    deploy_api_webconsole(namespace, config_path, version)
-    deploy_metadata(namespace, config_path, quobyte_config.get('metadata', []), version)
-    deploy_data(namespace, config_path, quobyte_config.get('data', []), version)
-    deploy_client(namespace, config_path, quobyte_config.get('client', []), version, quobyte_config['mount_opts'])
-    deploy_qmgmt_pod(namespace, config_path, version)
+    deploy_registries(
+        namespace,
+        config_path,
+        quobyte_config.get('registry', []),
+        version,
+        quobyte_config['resources']['registry'])
+
+    deploy_api_webconsole(
+        namespace,
+        config_path,
+        version)
+
+    deploy_metadata(
+        namespace,
+        config_path,
+        quobyte_config.get('metadata', []),
+        version,
+        quobyte_config['resources']['metadata'])
+
+    deploy_data(
+        namespace,
+        config_path,
+        quobyte_config.get('data', []),
+        version,
+        quobyte_config['resources']['data'])
+
+    deploy_client(
+        namespace,
+        config_path,
+        quobyte_config.get('client', []),
+        version,
+        quobyte_config['resources']['client'],
+        quobyte_config['mount_opts'])
+
+    deploy_qmgmt_pod(
+        namespace,
+        config_path,
+        version)
 
     print('Quobyte Cluster was successfully deployed')
     print('Validate state with:\n kubectl -n quobyte exec -it qmgmt-pod -- qmgmt -u api:7860 service list')
