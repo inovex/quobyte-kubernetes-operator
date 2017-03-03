@@ -270,7 +270,7 @@ class QuobyteDeployer:
         self.create_daemonset('data')
 
         for node in self.get_nodes_for_quobyte_service('data'):
-            label_node(node, 'quobyte_metadata', 'true')
+            label_node(node, 'quobyte_data', 'true')
 
     def deploy_client(self):
         print('Start Quobyte Client deployment')
@@ -379,7 +379,16 @@ def main():
         print('Configuration is not valid')
         return
 
-    config.load_kube_config()
+    if 'incluster' in quobyte_config and quobyte_config['incluster']:
+        print('Load configuration for in cluster')
+        config.load_incluster_config()
+    elif 'kubeconfig' in quobyte_config:
+        print('Load configuration from {}'.format(quobyte_config['kubeconfig']))
+        config.new_client_from_config(config_file=quobyte_config['kubeconfig'])
+    else:
+        print('Load default configuration')
+        config.load_kube_config()
+
     QuobyteDeployer(quobyte_config).deploy()
 
 

@@ -10,8 +10,13 @@ This is a Python script that deploys [Quobyte](https://www.quobyte.com) on top o
 
 ## Prequesits
 
+- [PyYaml](https://pypi.python.org/pypi/PyYAML)
 - [Kubernetes API Client](https://github.com/kubernetes-incubator/client-python)
 - Running Kubernetes Cluster
+
+```
+pip install pyyaml kubernetes
+```
 
 ## Usage
 
@@ -67,6 +72,20 @@ default:
 python3 quobyte-k8s-deployer.py
 ```
 
+#### Inside Kubernetes
+
+You can also deploy Quobyte from inside the Kubernetes Cluster:
+
+```bash
+cp k8s/deployer_config.yaml.example k8s/deployer_config.yaml
+```
+
+Adjust the config to your need and then run the deployment
+
+```bash
+kubectl create -f k8s
+```
+
 ## Tested
 
 This script is tested with Python 3 (Python 2 should also work) and Kubernetes 1.5.
@@ -75,3 +94,5 @@ This script is tested with Python 3 (Python 2 should also work) and Kubernetes 1
 
 - See Code
 - Add better docs
+- Add (unit) Tests
+- pep8

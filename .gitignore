@@ -1,4 +1,4 @@
 .idea/
 *.go
 config.yaml
-!quobyte/config.yaml
+k8s/deployer_config.yaml
