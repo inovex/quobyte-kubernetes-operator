@@ -90,6 +90,12 @@ kubectl create -f k8s
 
 This script is tested with Python 3 (Python 2 should also work) and Kubernetes 1.5.
 
+## Additional Information
+
+### Multiple Quobyte Data devices
+
+The Quobyte deployer allows to use preformatted Devices (for more information how to format your devices for Quobyte look into the Quobyte [docs](https://support.quobyte.com)). To use a preformatted disk just mount the Disk into `/mnt/data` with an unique Name and execute the [qmkdev](https://github.com/quobyte/quobyte-deploy/blob/master/tools/qmkdev) script with `qmkdev -t DATA -s $(uuidgen) <mountpoint>`. There is some effort to move this step into the deployer (doesn't work at the moment).
+
 # Todos
 
 - See Code
