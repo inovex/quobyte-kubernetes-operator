@@ -9,6 +9,17 @@ spec:
         prometheus.io/scrape: 'true'
         prometheus.io/path: '/prometheus'
         prometheus.io/port: '7873'
+        pod.beta.kubernetes.io/init-containers: '[
+            {
+                "name": "init-devices",
+                "image": "johscheuer/device_formatter:0.1",
+                "imagePullPolicy": "Always",
+                "securityContext": {
+                  "privileged": true
+                },
+                "hostPID": true
+            }
+        ]'
       labels:
         role: data
         version: VERSION
@@ -34,25 +45,26 @@ spec:
             hostname $NODENAME
             sed "s/.*MIN_MEM_DATA=.*/MIN_MEM_DATA=${MIN_MEM}/" -i /etc/default/quobyte
             sed "s/.*MAX_MEM_DATA=.*/MAX_MEM_DATA=${MAX_MEM}/" -i /etc/default/quobyte
-            if [ ! -f /devices/data/QUOBYTE_DEV_SETUP ]; then
-              mkdir -p /devices/data
-              cat >/devices/data/QUOBYTE_DEV_SETUP <<EOF
+
+            if [ ! "$(ls -A /devices)" ] && [ ! -f /devices/QUOBYTE_DEV_SETUP ]; then
+              mkdir -p /devices
+              cat >/devices/QUOBYTE_DEV_SETUP <<EOF
             device.serial=$(uuidgen)
             device.model=Kubernetes-hostDir
             device.type=DATA_DEVICE
             EOF
             fi
 
-            if [ ! -f /devices/data/UUID ]; then
-              echo uuid=$(uuidgen) >> /devices/data/UUID
+            if [ ! -f /devices/UUID ]; then
+              echo uuid=$(uuidgen) >> /devices/UUID
             fi
 
-            cat /devices/data/UUID >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
+            cat /devices/UUID >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
 
             exec /bin/bash -x /opt/main.sh
         volumeMounts:
           - name: devices
-            mountPath: /devices/data
+            mountPath: /devices
         ports:
           - name: rpc-tcp
             containerPort: 7873

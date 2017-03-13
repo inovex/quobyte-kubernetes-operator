@@ -5,6 +5,7 @@ from kubernetes.client.rest import ApiException
 import yaml
 import time
 import argparse
+import json
 
 
 def set_mount_opts_in_spec(spec, opts):
@@ -21,8 +22,10 @@ def set_resources_in_spec(spec, resources):
         c['resources'] = resources
         if 'command' in c:
             command = c['command'][len(c['command']) - 1]
-            command = command.replace('${MIN_MEM}', resources['requests']['memory'].rstrip('i').lower())
-            command = command.replace('${MAX_MEM}', resources['limits']['memory'].rstrip('i').lower())
+            command = command.replace('${MIN_MEM}', resources['requests'][
+                                      'memory'].rstrip('i').lower())
+            command = command.replace('${MAX_MEM}', resources['limits'][
+                                      'memory'].rstrip('i').lower())
             c['command'][len(c['command']) - 1] = command
 
 
@@ -76,11 +79,15 @@ def valid_config(config):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Deploy Quobyte Cluster on top of Kubernetes')
-    parser.add_argument('--config_file', default='./config.yaml', help='Path to the config_file')
+    parser = argparse.ArgumentParser(
+        description='Deploy Quobyte Cluster on top of Kubernetes')
+    parser.add_argument('--config_file', default='./config.yaml',
+                        help='Path to the config_file')
     return parser.parse_args()
 
+
 class QuobyteDeployer:
+
     def __init__(self, quobyte_config):
         self.config_path = quobyte_config['kubernetes_files']
         self.version = quobyte_config['version']
@@ -106,7 +113,8 @@ class QuobyteDeployer:
         api_instance = client.CoreV1Api()
         api_response = None
         try:
-            api_response = api_instance.list_namespace(field_selector='metadata.name=quobyte')
+            api_response = api_instance.list_namespace(
+                field_selector='metadata.name=quobyte')
         except ApiException as e:
             print("Exception when calling CoreV1Api->list_namespace: %s\n" % e)
             # raise
@@ -150,7 +158,8 @@ class QuobyteDeployer:
             api_instance.create_namespaced_service(self.namespace,
                                                    self.load_body('{}-svc'.format(name)))
         except ApiException as e:
-            print("Exception when calling CoreV1Api->create_namespaced_configmap: %s\n" % e)
+            print(
+                "Exception when calling CoreV1Api->create_namespaced_configmap: %s\n" % e)
 
     def get_nodes_for_quobyte_service(self, service):
         if service not in self.quobyte_config or self.quobyte_config[service] is None:
@@ -189,7 +198,8 @@ class QuobyteDeployer:
             pass
 
         if api_response is None or len(api_response.items) < 1 or (api_response.items[0].status.phase != 'Running'):
-            success = self.wait_for_running_pod(api_instance, 'role=registry', 'Bootstrap registry')
+            success = self.wait_for_running_pod(
+                api_instance, 'role=registry', 'Bootstrap registry')
 
         if not success:
             raise TimeoutError('Bootstrap Registry didn\'t come up...')
@@ -204,7 +214,8 @@ class QuobyteDeployer:
         # TODO remove hardcoded time and hardcoded tries -> move into config
         backoff = 1
         while tries < 20:
-            print('Waiting for {} to come up - tries: {} - backoff: {}'.format(name, tries, backoff))
+            print(
+                'Waiting for {} to come up - tries: {} - backoff: {}'.format(name, tries, backoff))
             api_response = None
             try:
                 api_response = api_instance.list_namespaced_pod(self.namespace,
@@ -215,11 +226,13 @@ class QuobyteDeployer:
                 pass
 
             if api_response is not None and \
-                            api_response.items is not None and \
-                            len(api_response.items) > 0 and \
-                            api_response.items[0].status.container_statuses is not None:
-                count_ready_container = len([cs for cs in api_response.items[0].status.container_statuses if cs.ready])
-                count_spec_container = len(api_response.items[0].spec.containers)
+                    api_response.items is not None and \
+                    len(api_response.items) > 0 and \
+                    api_response.items[0].status.container_statuses is not None:
+                count_ready_container = len([cs for cs in api_response.items[
+                                            0].status.container_statuses if cs.ready])
+                count_spec_container = len(
+                    api_response.items[0].spec.containers)
                 if api_response.items[0].status.phase == 'Running' and count_ready_container == count_spec_container:
                     return True
 
@@ -285,7 +298,8 @@ class QuobyteDeployer:
 
         api_response = None
         try:
-            api_response = api_instance.list_namespaced_pod(self.namespace, label_selector='role=qmgmt-pod')
+            api_response = api_instance.list_namespaced_pod(
+                self.namespace, label_selector='role=qmgmt-pod')
         except ApiException as e:
             print("Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e)
         except ValueError:
@@ -301,6 +315,15 @@ class QuobyteDeployer:
             api_instance.create_namespaced_pod(self.namespace, body)
         except ApiException as e:
             print("Exception when calling CoreV1Api->create_namespaced_pod: %s\n" % e)
+
+    def set_disks_in_spec(self, spec, name):
+        if name not in self.quobyte_config or self.quobyte_config[name] is None or 'disks' not in self.quobyte_config[name]:
+            return
+
+        c = spec['spec']['template']['metadata']['annotations']['pod.beta.kubernetes.io/init-containers']
+        init_containers = json.loads(c)
+        init_containers[0]['env'] = [{'name': 'DISKS', 'value': ','.join(self.quobyte_config[name]['disks'])}]
+        spec['spec']['template']['metadata']['annotations']['pod.beta.kubernetes.io/init-containers'] = json.dumps(init_containers)
 
     def set_version_in_spec(self, spec):
         kind = spec['kind']
@@ -336,16 +359,19 @@ class QuobyteDeployer:
 
         print('Create Quobyte DaemonSet {}'.format(name))
         body = self.load_body('{}-ds'.format(name))
+        self.set_disks_in_spec(body, name)
         self.set_version_in_spec(body)
 
-        set_resources_in_spec(body, self.get_resource_for_quobyte_service(name))
+        set_resources_in_spec(
+            body, self.get_resource_for_quobyte_service(name))
         mount_opts = self.get_mount_opts_for_quobyte_service(name)
         if mount_opts != '':
             set_mount_opts_in_spec(body, mount_opts)
         try:
             api_instance.create_namespaced_daemon_set(self.namespace, body)
         except ApiException as e:
-            print("Exception when calling CoreV1Api->create_namespaced_configmap: %s\n" % e)
+            print(
+                "Exception when calling CoreV1Api->create_namespaced_configmap: %s\n" % e)
 
     def get_mount_opts_for_quobyte_service(self, service):
         if service not in self.quobyte_config or self.quobyte_config[service] is None:
@@ -383,7 +409,8 @@ def main():
         print('Load configuration for in cluster')
         config.load_incluster_config()
     elif 'kubeconfig' in quobyte_config:
-        print('Load configuration from {}'.format(quobyte_config['kubeconfig']))
+        print('Load configuration from {}'.format(
+            quobyte_config['kubeconfig']))
         config.new_client_from_config(config_file=quobyte_config['kubeconfig'])
     else:
         print('Load default configuration')

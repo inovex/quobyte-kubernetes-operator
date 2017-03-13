@@ -8,6 +8,18 @@ spec:
       labels:
         role: registry
         version: VERSION
+      annotations:
+        pod.beta.kubernetes.io/init-containers: '[
+            {
+                "name": "init-devices",
+                "image": "johscheuer/device_formatter:0.1",
+                "imagePullPolicy": "Always",
+                "securityContext": {
+                  "privileged": true
+                },
+                "hostPID": true
+            }
+        ]'
     spec:
       containers:
         - name: quobyte-registry
@@ -46,6 +58,8 @@ spec:
               hostname $NODENAME
               sed "s/.*MIN_MEM_REGISTRY=.*/MIN_MEM_REGISTRY=${MIN_MEM}/" -i /etc/default/quobyte
               sed "s/.*MAX_MEM_REGISTRY=.*/MAX_MEM_REGISTRY=${MAX_MEM}/" -i /etc/default/quobyte
+              # TODO if directory is empty skip -> /dev1 needed?
+              # [ ! "$(ls -A /devices)" ] &&
               if [ ! -f /devices/dev1/QUOBYTE_DEV_SETUP ]; then
                 mkdir -p /devices/dev1
                 cat > /devices/dev1/QUOBYTE_DEV_SETUP <<EOF
@@ -58,11 +72,11 @@ spec:
                 fi
               fi
 
-              if [ ! -f /devices/dev1/UUID ]; then
-                echo uuid=$(uuidgen) >> /devices/dev1/UUID
+              if [ ! -f /devices/UUID ]; then
+                echo uuid=$(uuidgen) >> /devices/UUID
               fi
 
-              cat /devices/dev1/UUID >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
+              cat /devices/UUID >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
 
               exec /bin/bash -x /opt/main.sh
           lifecycle:

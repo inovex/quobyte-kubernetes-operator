@@ -1,0 +1,4 @@
+#!/bin/bash
+docker build -t johscheuer/device_formatter:0.1 .
+echo "docker push johscheuer/device_formatter:0.1"
+# docker run --privileged -ti --pid=host -e "DISKS=sda,sdb,sdc" johscheuer/device_formatter:0.1
