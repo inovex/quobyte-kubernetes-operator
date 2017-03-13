@@ -6,6 +6,7 @@ import yaml
 import time
 import argparse
 import json
+import random
 
 
 def set_mount_opts_in_spec(spec, opts):
@@ -93,6 +94,7 @@ class QuobyteDeployer:
         self.version = quobyte_config['version']
         self.namespace = quobyte_config['namespace']
         self.quobyte_config = quobyte_config
+        self.cached_nodes = get_all_nodes()
 
     def deploy(self):
         self.create_namespace()
@@ -166,8 +168,13 @@ class QuobyteDeployer:
             return self.get_nodes_for_quobyte_service('default')
 
         nodes = self.quobyte_config[service].get('nodes', [])
+        if isinstance(nodes, int):
+            # we could save the state into etcd with TPR
+            # check if value is < 1 ?
+            return random.sample(self.cached_nodes, nodes)
+
         if len(nodes) > 0 and nodes[0] == 'all':
-            return get_all_nodes()
+            return self.cached_nodes
         if len(nodes) > 0:
             return nodes
 
