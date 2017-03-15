@@ -171,6 +171,7 @@ class QuobyteDeployer:
         if isinstance(nodes, int):
             # we could save the state into etcd with TPR
             # check if value is < 1 ?
+            # TODO check how many nodes allready labeled!
             return random.sample(self.cached_nodes, nodes)
 
         if len(nodes) > 0 and nodes[0] == 'all':
@@ -327,10 +328,13 @@ class QuobyteDeployer:
         if name not in self.quobyte_config or self.quobyte_config[name] is None or 'disks' not in self.quobyte_config[name]:
             return
 
-        c = spec['spec']['template']['metadata']['annotations']['pod.beta.kubernetes.io/init-containers']
+        c = spec['spec']['template']['metadata']['annotations'][
+            'pod.beta.kubernetes.io/init-containers']
         init_containers = json.loads(c)
-        init_containers[0]['env'] = [{'name': 'DISKS', 'value': ','.join(self.quobyte_config[name]['disks'])}]
-        spec['spec']['template']['metadata']['annotations']['pod.beta.kubernetes.io/init-containers'] = json.dumps(init_containers)
+        init_containers[0]['env'] = [
+            {'name': 'DISKS', 'value': ','.join(self.quobyte_config[name]['disks'])}]
+        spec['spec']['template']['metadata']['annotations'][
+            'pod.beta.kubernetes.io/init-containers'] = json.dumps(init_containers)
 
     def set_version_in_spec(self, spec):
         kind = spec['kind']

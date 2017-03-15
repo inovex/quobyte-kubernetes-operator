@@ -36,14 +36,14 @@ version: '1.3.14'
 kubernetes_files: './quobyte'
 registry:
     nodes:
-        - 207.154.211.166
-        - 207.154.211.247
-        - 207.154.215.157
+        - node01
+        - node02
+        - node3
 metadata:
     nodes:
-        - 207.154.211.166
-        - 207.154.211.247
-        - 207.154.215.157
+        - node01
+        - node02
+        - node03
 client:
     mount_opts: '' # example: '-o user_xattr'
 api:
@@ -65,6 +65,8 @@ default:
             memory: 1Gi
             cpu: 500m
 ```
+
+You can find some sample config files for the operator inside the <examples> folder.
 
 ### Deployment
 
