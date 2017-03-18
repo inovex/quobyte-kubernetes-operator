@@ -30,7 +30,7 @@ spec:
             fi
             if cut -d" " -f2 /etc/mtab | grep -q ${QUOBYTE_MOUNT_POINT}; then
               if [[ -z $OPTS ]]; then
-                 OPTS="-o remount"
+                OPTS="-o remount"
               else
                 OPTS="$OPTS,remount"
               fi
@@ -42,9 +42,6 @@ spec:
               lib/ld-linux-x86-64.so.2 \
               --library-path ./lib \
             ./bin/mount.quobyte --hostname ${NODENAME} --allow-usermapping-in-volumename -f -d ${QUOBYTE_CLIENT_LOG_LEVEL} ${OPTS} ${ADDR}/ ${QUOBYTE_MOUNT_POINT}
-        securityContext:
-          privileged: true
-        hostPID: true
         env:
           - name: QUOBYTE_CLIENT_LOG_LEVEL
             value: INFO
@@ -81,6 +78,9 @@ spec:
           preStop:
             exec:
               command: ["/bin/bash", "-xc", "umount -f ${QUOBYTE_MOUNT_POINT}"]
+        securityContext:
+          privileged: true
+      hostPID: true
       nodeSelector:
         quobyte_client: "true"
       volumes:
