@@ -39,9 +39,8 @@ def get_all_nodes():
         print("Exception when calling CoreV1Api->list_node: %s\n" % e)
         return nodes
 
-    # TODO use simple list ?
     for node in api_response.items:
-        nodes.append(node.metadata.name)
+        nodes.append(node)
 
     return nodes
 
@@ -163,19 +162,46 @@ class QuobyteDeployer:
             print(
                 "Exception when calling CoreV1Api->create_namespaced_configmap: %s\n" % e)
 
+    def get_node_name_list(self, nodes):
+        names = []
+
+        for node in nodes:
+            names.append(node.metadata.name)
+
+        return names
+
+    def get_labeled_nodes_for_service(self, service):
+        labeled = []
+        label = 'quobyte_{}'.format(service)
+
+        for node in self.cached_nodes:
+            if label in node.metadata.labels and node.metadata.labels[label] == 'true':
+                labeled.append(node.metadata.name)
+
+        return labeled
+
+    def get_unlabeled_nodes(self, service, count):
+        labeled = self.get_labeled_nodes_for_service(service)
+        if len(labeled) == count:
+            return labeled
+
+        all_nodes = self.get_node_name_list(self.cached_nodes)
+
+        for node in labeled:
+            all_nodes.remove(node)
+
+        return random.sample(all_nodes, count - len(labeled))
+
     def get_nodes_for_quobyte_service(self, service):
         if service not in self.quobyte_config or self.quobyte_config[service] is None:
             return self.get_nodes_for_quobyte_service('default')
 
         nodes = self.quobyte_config[service].get('nodes', [])
         if isinstance(nodes, int):
-            # we could save the state into etcd with TPR
-            # check if value is < 1 ?
-            # TODO check how many nodes allready labeled!
-            return random.sample(self.cached_nodes, nodes)
+            return self.get_unlabeled_nodes(service, nodes)
 
         if len(nodes) > 0 and nodes[0] == 'all':
-            return self.cached_nodes
+            return self.get_node_name_list(self.cached_nodes)
         if len(nodes) > 0:
             return nodes
 
@@ -325,8 +351,29 @@ class QuobyteDeployer:
             print("Exception when calling CoreV1Api->create_namespaced_pod: %s\n" % e)
 
     def set_disks_in_spec(self, spec, name):
+        return
+        # TODO not implemented
+        '''
+        annotations:
+        pod.beta.kubernetes.io/init-containers: '[
+            {
+                "name": "init-devices",
+                "image": "johscheuer/device_formatter:0.1",
+                "imagePullPolicy": "Always",
+                "securityContext": {
+                  "privileged": true
+                },
+                "hostPID": true
+            }
+        ]'
+
+        :param spec:
+        :param name:
+        :return:
+        '''
         if name not in self.quobyte_config or self.quobyte_config[name] is None or 'disks' not in self.quobyte_config[name]:
             return
+
 
         c = spec['spec']['template']['metadata']['annotations'][
             'pod.beta.kubernetes.io/init-containers']
