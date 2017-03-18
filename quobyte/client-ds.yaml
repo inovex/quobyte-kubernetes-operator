@@ -79,7 +79,6 @@ spec:
           preStop:
             exec:
               command: ["/bin/bash", "-xc", "umount -f ${QUOBYTE_MOUNT_POINT}"]
-      hostPID: true
       nodeSelector:
         quobyte_client: "true"
       volumes:

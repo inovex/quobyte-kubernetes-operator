@@ -9,17 +9,6 @@ spec:
         prometheus.io/scrape: 'true'
         prometheus.io/path: '/prometheus'
         prometheus.io/port: '7872'
-        pod.beta.kubernetes.io/init-containers: '[
-            {
-                "name": "init-devices",
-                "image": "johscheuer/device_formatter:0.1",
-                "imagePullPolicy": "Always",
-                "securityContext": {
-                  "privileged": true
-                },
-                "hostPID": true
-            }
-        ]'
       labels:
         role: metadata
         version: VERSION
@@ -28,7 +17,9 @@ spec:
       - name: quobyte-metadata
         image: quay.io/quobyte/quobyte-server:VERSION
         securityContext:
-          privileged: true
+          capabilities:
+            add:
+              - SYS_ADMIN
         env:
           - name: QUOBYTE_SERVICE
             value: metadata
