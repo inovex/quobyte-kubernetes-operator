@@ -24,7 +24,7 @@ spec:
           - name: QUOBYTE_SERVICE
             value: metadata
           - name: QUOBYTE_REGISTRY
-            value: _quobyte._tcp.registry
+            value: registry
         command:
           - /bin/bash
           - -xec

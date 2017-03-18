@@ -37,12 +37,14 @@ spec:
             else
               mkdir -p ${QUOBYTE_MOUNT_POINT}
             fi
+             # TODO generate UUID and use it
             /bin/nsenter -t 1 --wd=. -m -- \
               lib/ld-linux-x86-64.so.2 \
               --library-path ./lib \
             ./bin/mount.quobyte --hostname ${NODENAME} --allow-usermapping-in-volumename -f -d ${QUOBYTE_CLIENT_LOG_LEVEL} ${OPTS} ${ADDR}/ ${QUOBYTE_MOUNT_POINT}
         securityContext:
           privileged: true
+        hostPID: true
         env:
           - name: QUOBYTE_CLIENT_LOG_LEVEL
             value: INFO

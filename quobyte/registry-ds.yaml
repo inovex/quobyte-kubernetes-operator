@@ -20,7 +20,7 @@ spec:
             - name: QUOBYTE_SERVICE
               value: registry
             - name: QUOBYTE_REGISTRY
-              value: _quobyte._tcp.registry
+              value: registry
             - name: QUOBYTE_EXTRA_SERVICE_CONFIG
               value: >
                 constants.automation.manage_registry_replicas=true

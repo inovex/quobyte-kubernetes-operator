@@ -24,15 +24,7 @@ spec:
           - name: QUOBYTE_SERVICE
             value: data
           - name: QUOBYTE_REGISTRY
-            value: _quobyte._tcp.registry
-          - name: NODENAME
-            valueFrom:
-              fieldRef:
-                fieldPath: spec.nodeName
-        hostname:
-          valueFrom:
-              fieldRef:
-                fieldPath: spec.nodeName
+            value: registry
         command:
           - /bin/bash
           - -xec
