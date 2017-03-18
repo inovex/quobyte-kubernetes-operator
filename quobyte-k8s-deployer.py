@@ -182,8 +182,9 @@ class QuobyteDeployer:
 
     def get_unlabeled_nodes(self, service, count):
         labeled = self.get_labeled_nodes_for_service(service)
-        if len(labeled) == count:
+        if len(labeled) >= count:
             return labeled
+        # TODO if number is bigger we should resize
 
         all_nodes = self.get_node_name_list(self.cached_nodes)
 
