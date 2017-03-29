@@ -22,51 +22,11 @@ pip install pyyaml kubernetes
 
 ### Configuration
 
-Copy the configuration file config.yaml.example to config.yaml
+Copy the configuration file `examples/example_config.yaml` to `config.yaml`
 
 ```bash
-cp config.yaml.example config.yaml
+cp examples/example_config.yaml config.yaml
 ```
-
-Example Configuration file (if no configuration is specified for an Quobyte service the default values will be used):
-
-```yaml
-namespace: quobyte
-version: '1.3.14'
-kubernetes_files: './quobyte'
-registry:
-    nodes:
-        - node01
-        - node02
-        - node3
-metadata:
-    nodes:
-        - node01
-        - node02
-        - node03
-client:
-    mount_opts: '' # example: '-o user_xattr'
-api:
-    resources:
-        limits:
-            memory: 1Gi
-            cpu: 500m
-        requests:
-            memory: 500Mi
-            cpu: 250m
-default:
-    nodes:
-        - all
-    resources:
-        limits:
-            memory: 2Gi
-            cpu: 1
-        requests:
-            memory: 1Gi
-            cpu: 500m
-```
-
-You can find some sample config files for the operator inside the <examples> folder.
 
 ### Deployment
 
@@ -88,19 +48,14 @@ Adjust the config to your need and then run the deployment
 kubectl create -f k8s
 ```
 
-## Tested
-
-This script is tested with Python 3 (Python 2 should also work) and Kubernetes 1.5.
-
 ## Additional Information
 
-### Multiple Quobyte Data devices
+- If no configuration is specified for an Quobyte service the default values will be used
+
+### Multiple Quobyte (Meta)Data devices
 
 The Quobyte deployer allows to use preformatted Devices (for more information how to format your devices for Quobyte look into the Quobyte [docs](https://support.quobyte.com)). To use a preformatted disk just mount the Disk into `/mnt/data` with an unique Name and execute the [qmkdev](https://github.com/quobyte/quobyte-deploy/blob/master/tools/qmkdev) script with `qmkdev -t DATA -s $(uuidgen) <mountpoint>`. There is some effort to move this step into the deployer (doesn't work at the moment).
 
-# Todos
+## Tested
 
-- See Code
-- Add better docs
-- Add (unit) Tests
-- pep8
+This script is tested with Python 3 (Python 2 should also work) and Kubernetes 1.5.
