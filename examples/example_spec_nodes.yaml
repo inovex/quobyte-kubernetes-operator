@@ -1,0 +1,33 @@
+namespace: quobyte
+version: '1.3.16'
+kubernetes_files: './quobyte'
+registry:
+    nodes:
+        - node01
+        - node02
+        - node03
+metadata:
+    nodes:
+        - node01
+        - node02
+        - node03
+client:
+    mount_opts: '' # example: '-o user_xattr'
+api:
+    resources:
+        limits:
+            memory: 1Gi
+            cpu: 500m
+        requests:
+            memory: 500Mi
+            cpu: 250m
+default:
+    nodes:
+        - all
+    resources:
+        limits:
+            memory: 2Gi
+            cpu: 1
+        requests:
+            memory: 1Gi
+            cpu: 500m
