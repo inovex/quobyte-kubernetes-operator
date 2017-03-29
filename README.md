@@ -8,7 +8,7 @@ This is a Python script that deploys [Quobyte](https://www.quobyte.com) on top o
 - `Client`
 - `API` (and the Web Console)
 
-## Prequesits
+## Prerequisites
 
 - [PyYaml](https://pypi.python.org/pypi/PyYAML)
 - [Kubernetes API Client](https://github.com/kubernetes-incubator/client-python)
