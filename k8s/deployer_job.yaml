@@ -2,20 +2,23 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: quobyte-deployer
+  namespace: quobyte
 spec:
   template:
     metadata:
       name: quobyte-deployer
+      namespace: quobyte
     spec:
+      serviceAccountName: quobyte-deployer
       restartPolicy: Never
+      containers:
+      - name: quobyte-deployer
+        image: johscheuer/quobyte-kubernetes-deployer:0.2
+        volumeMounts:
+          - name: deployer-config
+            mountPath: /deployer/config.yaml
+            subPath: config.yaml
       volumes:
       - name: deployer-config
         configMap:
           name: deployer-config
-      containers:
-      - name: quobyte-deployer
-        image: johscheuer/quobyte-kubernetes-deployer:0.1
-        command: ["/bin/bash", "-xc", 'python3 /deployer/quobyte-k8s-deployer.py --config_file=/deployer/config/config.yaml']
-        volumeMounts:
-          - name: deployer-config
-            mountPath: /deployer/config
