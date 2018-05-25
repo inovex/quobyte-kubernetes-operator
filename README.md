@@ -1,3 +1,7 @@
+**Deprecated**
+
+Please use instead the official Quobyte Operator: https://github.com/quobyte/kubernetes/tree/master/operator
+
 # Quobyte Kubernetes Deployer
 
 This is a Python script that deploys [Quobyte](https://www.quobyte.com) on top of Kubernetes. The script deploys the following Quobyte services:
